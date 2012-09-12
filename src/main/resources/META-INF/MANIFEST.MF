@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 1
+Bundle-Name: Nuxeo XSD testcase
+Bundle-SymbolicName: org.nuxeo.testxsd;singleton:=true
+Bundle-Version: 1.0.0
+Nuxeo-Component: OSGI-INF/core-types-contrib.xml
