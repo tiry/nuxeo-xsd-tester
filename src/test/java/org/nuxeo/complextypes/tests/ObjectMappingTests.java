@@ -48,6 +48,7 @@ public class ObjectMappingTests {
     public void shouldCreateDocumentFromPojo() throws Exception {
 
         SimplePojo pojo = new SimplePojo();
+        pojo.initField();
 
         // create a Document from a Pojo
         DocumentModel doc = DocumentModelMapper.toDocumentModel(session, pojo);
@@ -80,6 +81,64 @@ public class ObjectMappingTests {
         assertEquals("field0", field.get("name"));
         assertEquals("description0", field.get("description"));
         assertEquals("col0", field.get("columnName"));
+
+        // persists doc to be sure
+        doc = session.createDocument(doc);
+
+        // re-run checks
+        assertEquals(pojo.getTitle(), doc.getTitle());
+        assertEquals(pojo.getDcDescription(),
+                doc.getPropertyValue("dc:description"));
+        assertEquals(pojo.getDcModified(), doc.getPropertyValue("dc:modified"));
+
+        // check lists
+        assertEquals(mkString(pojo.getSubjects()),
+                mkString((String[]) doc.getPropertyValue("dc:subjects")));
+        assertEquals(mkString(pojo.getContributors()),
+                mkString((String[]) doc.getPropertyValue("dc:contributors")));
+
+        // check complex
+        fields = (List<Map<String, Object>>) doc.getPropertyValue("ds:fields");
+        assertNotNull(fields);
+
+        assertEquals(5, fields.size());
+
+        field = fields.get(0);
+        assertNotNull(field);
+
+        assertEquals("field0", field.get("name"));
+        assertEquals("description0", field.get("description"));
+        assertEquals("col0", field.get("columnName"));
+
+    }
+
+    @Test
+    public void shouldCreatePojoFromDocument() throws Exception {
+
+        SimplePojo pojo = new SimplePojo();
+        pojo.initField();
+
+        // create a Document from a Pojo
+        DocumentModel doc = DocumentModelMapper.toDocumentModel(session, pojo);
+        assertNotNull(doc);
+
+        // persists doc to be sure
+        doc = session.createDocument(doc);
+
+        SimplePojo reconstructedPojo = DocumentModelMapper.toBean(doc,
+                SimplePojo.class);
+        assertNotNull(reconstructedPojo);
+
+        assertEquals(pojo.getTitle(), reconstructedPojo.getTitle());
+
+        assertEquals(pojo.getDcDescription(),
+                reconstructedPojo.getDcDescription());
+
+        assertEquals(mkString(pojo.getSubjects()),
+                mkString(reconstructedPojo.getSubjects()));
+
+        // assertEquals(mkString(pojo.getContributors()),
+        // mkString(reconstructedPojo.getContributors()));
 
     }
 }

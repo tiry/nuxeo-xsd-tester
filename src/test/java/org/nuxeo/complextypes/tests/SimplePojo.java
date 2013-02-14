@@ -12,24 +12,26 @@ public class SimplePojo {
 
     protected String type = "DataSet";
 
-    protected String title = "simplePojo";
+    protected String title;
 
-    protected String dcDescription = "a simple Pojo";
+    protected String dcDescription;
 
-    protected String[] subjects = { "foo", "bar" };
+    protected String[] subjects;
 
-    protected List<String> contributors = Arrays.asList(new String[] { "toto",
-            "titi" });
+    protected List<String> contributors;
 
     protected List<Field> dsFields;
 
     protected Calendar dcModified = Calendar.getInstance();
 
-    protected String dublincoreSource = "tests";
+    protected String dublincoreSource;
 
-    protected Blob fileContent = new StringBlob("SomeFakeContent");
+    protected Blob fileContent;
 
     public SimplePojo() {
+    }
+
+    public void initField() {
         dsFields = new ArrayList<SimplePojo.Field>();
         for (int i = 0; i < 5; i++) {
             SimplePojo.Field field = new SimplePojo.Field();
@@ -40,6 +42,12 @@ public class SimplePojo {
             field.sqlTypeHint = "hint" + i;
             dsFields.add(field);
         }
+        subjects = new String[] { "foo", "bar" };
+        title = "simplePojo";
+        dcDescription = "a simple Pojo";
+        contributors = Arrays.asList(new String[] { "toto", "titi" });
+        dublincoreSource = "tests";
+        fileContent = new StringBlob("SomeFakeContent");
     }
 
     public String getTitle() {

@@ -12,7 +12,6 @@ import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DataModel;
 import org.nuxeo.ecm.core.api.DocumentModel;
-import org.nuxeo.ecm.core.api.model.impl.ListProperty;
 import org.nuxeo.ecm.core.schema.SchemaManager;
 import org.nuxeo.ecm.core.schema.types.ComplexType;
 import org.nuxeo.ecm.core.schema.types.Field;
@@ -54,41 +53,15 @@ public class DocumentModelMapper {
         return null;
     }
 
-    protected static String capitalize(String name) {
-        // name = name.toLowerCase();
-        return name.substring(0, 1).toUpperCase() + name.substring(1);
-    }
-
-    protected static List<String> getMethodNames(String schemaName,
-            String prefix, Field field) {
-
-        List<String> possibleNames = new ArrayList<String>();
-
-        possibleNames.add("get" + capitalize(schemaName)
-                + capitalize(field.getName().getLocalName()));
-        if (prefix != null && !prefix.isEmpty() && !prefix.equals(schemaName)) {
-            possibleNames.add("get" + capitalize(prefix)
-                    + capitalize(field.getName().getLocalName()));
+    public static <T> T toBean(DocumentModel doc, Class<T> beanClass) {
+        try {
+            T bean = beanClass.newInstance();
+            fillBean(doc, bean);
+            return bean;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        possibleNames.add("get" + capitalize(field.getName().getLocalName()));
-
-        return possibleNames;
-    }
-
-    protected static Object getBeanValue(Object bean, String schemaName,
-            String prefix, Field field) throws Exception {
-
-        for (String methodName : getMethodNames(schemaName, prefix, field)) {
-            try {
-                Method getter = bean.getClass().getMethod(methodName);
-                if (getter != null) {
-                    return getter.invoke(bean);
-                }
-            } catch (NoSuchMethodException e) {
-                // NOP
-            }
-        }
-        return null;
     }
 
     protected static Object buildScalar(Type fieldType, Object value) {
@@ -139,7 +112,8 @@ public class DocumentModelMapper {
             for (Field field : complexType.getFields()) {
                 try {
                     Method m = value.getClass().getMethod(
-                            "get" + capitalize(field.getName().getLocalName()));
+                            "get"
+                                    + BeanHelper.capitalize(field.getName().getLocalName()));
                     Object v = m.invoke(value);
                     map.put(field.getName().getLocalName(), v);
                 } catch (NoSuchMethodException e) {
@@ -181,17 +155,32 @@ public class DocumentModelMapper {
 
             for (Field field : schema.getFields()) {
 
-                Object value = getBeanValue(bean, schemaName, prefix, field);
-
-                if (field.getName().getLocalName().equals("subjects")) {
-                    System.out.println("mapping array");
-                }
+                Object value = BeanHelper.getBeanValue(bean, schemaName,
+                        prefix, field);
 
                 dataModel.setValue(field.getName().getLocalName(),
                         buildField(field.getType(), value));
             }
         }
         // system properties
+
+    }
+
+    public static void fillBean(DocumentModel doc, Object bean)
+            throws Exception {
+
+        SchemaManager sm = Framework.getLocalService(SchemaManager.class);
+
+        for (DataModel dataModel : doc.getDataModelsCollection()) {
+
+            String schemaName = dataModel.getSchema();
+            Schema schema = sm.getSchema(schemaName);
+
+            for (Field field : schema.getFields()) {
+                Serializable value = doc.getPropertyValue(field.getName().getPrefixedName());
+                BeanHelper.applyValueToBean(bean, schemaName, field, value);
+            }
+        }
 
     }
 
